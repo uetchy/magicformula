@@ -119,7 +119,7 @@ func doPush(c *cli.Context) {
     packageOwner,
     formulaRepo,
     formulaFile,
-    &github.RepositoryContentGetOptions{}
+    &github.RepositoryContentGetOptions{},
   )
   if err != nil {
     fmt.Println("Error")
@@ -140,7 +140,7 @@ func doPush(c *cli.Context) {
     packageOwner,
     formulaRepo,
     formulaFile,
-    content
+    content,
   )
   fmt.Println(res)
   if err != nil {
