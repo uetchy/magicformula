@@ -1,17 +1,17 @@
 package main
 
 import (
-  "os"
-  "github.com/codegangsta/cli"
+	"github.com/codegangsta/cli"
+	"os"
 )
 
 var Commands = []cli.Command{
-  CommandPush,
+	CommandPush,
 }
 
 func main() {
-  app := cli.NewApp()
-  app.Name = "solver"
-  app.Commands = Commands
-  app.Run(os.Args)
+	app := cli.NewApp()
+	app.Name = "solver"
+	app.Commands = Commands
+	app.Run(os.Args)
 }
