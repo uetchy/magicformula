@@ -14,7 +14,7 @@ build:
     - script:
         name: output release tag
         code: |
-          git describe --tags --match 'v*' > $WERCKER_OUTPUT_DIR/.release_tag || warn "No release tag"
+          git describe --tags --exact --match 'v*' > $WERCKER_OUTPUT_DIR/.release_tag || warn "No release tag"
 deploy:
   steps:
     - script:
