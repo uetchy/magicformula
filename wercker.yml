@@ -52,3 +52,7 @@ deploy:
         version: $RELEASE_VERSION
         file64: snapshot/solver_darwin_amd64.zip
         file32: snapshot/solver_darwin_386.zip
+  after-steps:
+    - slack-notifier:
+        url: $SLACK_URL
+        channel: random

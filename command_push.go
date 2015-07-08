@@ -166,9 +166,6 @@ func doPush(c *cli.Context) {
 	}
 	formula := buf.Bytes()
 
-	fmt.Println(string(formula))
-	os.Exit(0)
-
 	// Prepare for github API request
 	formulaRepo := "homebrew-" + productName
 	formulaFile := productName + ".rb"
@@ -184,37 +181,57 @@ func doPush(c *cli.Context) {
 		&github.RepositoryContentGetOptions{},
 	)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+		// Create file
+		content := &github.RepositoryContentFileOptions{
+			Message: &commitMessage,
+			Content: formula,
+			Committer: &github.CommitAuthor{
+				Name:  &commitAuthor,
+				Email: &commitAuthorEmail,
+			},
+		}
+		res, _, err := client.Repositories.CreateFile(
+			productOwner,
+			formulaRepo,
+			formulaFile,
+			content,
+		)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 
-	header := "blob " + fmt.Sprintf("%v", len(formula))
-	sha := hashCommit(header, formula)
-	if *stat.SHA == sha {
-		fmt.Println("No changes")
-		os.Exit(0)
-	}
+		fmt.Println(*res.SHA)
+	} else {
+		// Update file
+		header := "blob " + fmt.Sprintf("%v", len(formula))
+		sha := hashCommit(header, formula)
+		if *stat.SHA == sha {
+			fmt.Println("No changes")
+			os.Exit(0)
+		}
 
-	// Update formula
-	content := &github.RepositoryContentFileOptions{
-		Message: &commitMessage,
-		Content: formula,
-		SHA:     stat.SHA,
-		Committer: &github.CommitAuthor{
-			Name:  &commitAuthor,
-			Email: &commitAuthorEmail,
-		},
-	}
-	res, _, err := client.Repositories.UpdateFile(
-		productOwner,
-		formulaRepo,
-		formulaFile,
-		content,
-	)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+		content := &github.RepositoryContentFileOptions{
+			Message: &commitMessage,
+			Content: formula,
+			SHA:     stat.SHA,
+			Committer: &github.CommitAuthor{
+				Name:  &commitAuthor,
+				Email: &commitAuthorEmail,
+			},
+		}
 
-	fmt.Println(*res.SHA)
+		res, _, err := client.Repositories.UpdateFile(
+			productOwner,
+			formulaRepo,
+			formulaFile,
+			content,
+		)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		fmt.Println(*res.SHA)
+	}
 }
