@@ -12,6 +12,7 @@ var Commands = []cli.Command{
 func main() {
 	app := cli.NewApp()
 	app.Name = "solver"
+	app.Usage = "solver"
 	app.Commands = Commands
 	app.Run(os.Args)
 }

@@ -10,6 +10,7 @@ import (
 	"golang.org/x/oauth2"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"text/template"
@@ -19,16 +20,17 @@ var CommandPush = cli.Command{
 	Name: "push",
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name:  "github-token",
-			Usage: "Github token",
+			Name:   "token",
+			Usage:  "Github token",
+			EnvVar: "GITHUB_TOKEN",
 		},
 		cli.StringFlag{
 			Name:  "name",
-			Usage: "Github name",
+			Usage: "repo name",
 		},
 		cli.StringFlag{
 			Name:  "owner",
-			Usage: "Github owner",
+			Usage: "repo owner",
 		},
 		cli.StringFlag{
 			Name:  "message",
@@ -44,19 +46,20 @@ var CommandPush = cli.Command{
 		},
 		cli.StringFlag{
 			Name:  "version",
-			Usage: "version",
+			Usage: "Version",
 		},
 		cli.StringFlag{
-			Name:  "tag",
-			Usage: "release tag",
+			Name:   "tag",
+			Usage:  "release tag",
+			EnvVar: "RELEASE_TAG",
 		},
 		cli.StringFlag{
-			Name:  "package-path-64",
-			Usage: "package-path-64",
+			Name:  "target-path-64",
+			Usage: "64bit",
 		},
 		cli.StringFlag{
-			Name:  "package-path-32",
-			Usage: "package-path-32",
+			Name:  "target-path-32",
+			Usage: "32bit",
 		},
 	},
 	Action: doPush,
@@ -68,6 +71,15 @@ func toCamelCase(str string) string {
 		return strings.Title(j[1:])
 	})
 	return strings.Title(res)
+}
+
+func hashCommit(header string, content []byte) string {
+	hasher := sha1.New()
+	hasher.Write([]byte(header))
+	hasher.Write([]byte("\x00"))
+	hasher.Write(content)
+	sum := hex.EncodeToString(hasher.Sum(nil))
+	return sum
 }
 
 func hashFileSum(path string) string {
@@ -85,62 +97,108 @@ func hashFileSum(path string) string {
 }
 
 func doPush(c *cli.Context) {
-	githubToken := c.String("github-token")
-	packageName := c.String("name")
-	packageOwner := c.String("owner")
-	packageVersion := c.String("version")
-	binaryPath64 := c.String("package-path-64")
-	binaryPath32 := c.String("package-path-32")
+	githubToken := c.String("token")
+	if githubToken == "" {
+		fmt.Println("Missing 'token'")
+		os.Exit(1)
+	}
+	productName := c.String("name")
+	if productName == "" {
+		fmt.Println("Missing 'name'")
+		os.Exit(1)
+	}
+	productOwner := c.String("owner")
+	if productOwner == "" {
+		fmt.Println("Missing 'owner'")
+		os.Exit(1)
+	}
+	productVersion := c.String("version")
+	if productVersion == "" {
+		fmt.Println("Missing 'version'")
+		os.Exit(1)
+	}
+	targetPath64 := c.String("target-path-64")
+	if targetPath64 == "" {
+		fmt.Println("Missing 'target-path-64'")
+		os.Exit(1)
+	}
+	targetPath32 := c.String("target-path-32")
 	commitMessage := c.String("message")
+	if commitMessage == "" {
+		commitMessage = "Deploy from " + productOwner
+	}
 	commitAuthor := c.String("committer")
+	if commitAuthor == "" {
+		fmt.Println("Missing 'committer'")
+		os.Exit(1)
+	}
 	commitAuthorEmail := c.String("committer-email")
+	if commitAuthorEmail == "" {
+		fmt.Println("Missing 'committer-email'")
+		os.Exit(1)
+	}
 	releaseTag := c.String("tag")
 	if releaseTag == "" {
-		releaseTag = "v" + packageVersion
+		releaseTag = "v" + productVersion
 	}
 
 	// Generate formula
-	githubRepoUrl := "https://github.com/" + packageOwner + "/" + packageName
-	githubReleaseUrl := githubRepoUrl + "/releases/download/" + releaseTag
+	githubReleaseUrl := "https://github.com/" + productOwner + "/" + productName + "/releases/download/" + releaseTag
 	inv := map[string]string{
-		"BinName":       packageName,
-		"ClassName":     toCamelCase(packageName),
-		"Version":       packageVersion,
-		"PackageUrl64":  githubReleaseUrl + "/" + binaryPath64,
-		"PackageHash64": hashFileSum(binaryPath64),
-		"PackageUrl32":  githubReleaseUrl + "/" + binaryPath32,
-		"PackageHash32": hashFileSum(binaryPath32),
+		"BinName":      productName,
+		"ClassName":    toCamelCase(productName),
+		"Version":      productVersion,
+		"TargetUrl64":  githubReleaseUrl + filepath.Join("/", filepath.Base(targetPath64)),
+		"TargetHash64": hashFileSum(targetPath64),
 	}
-	tmpl, _ := Asset("formula.tmpl")
+	if targetPath32 != "" {
+		inv["TargetUrl32"] = githubReleaseUrl + filepath.Join("/", filepath.Base(targetPath32))
+		inv["TargetHash32"] = hashFileSum(targetPath32)
+	}
+	tmpl, _ := Asset("templates/formula.tmpl")
 	t := template.New("formula")
 	template.Must(t.Parse(string(tmpl)))
 	var buf bytes.Buffer
-	t.Execute(&buf, inv)
-	formula := buf.String()
+	err := t.Execute(&buf, inv)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	formula := buf.Bytes()
+
+	fmt.Println(string(formula))
+	os.Exit(0)
 
 	// Prepare for github API request
-	formulaRepo := "homebrew-" + packageName
-	formulaFile := packageName + ".rb"
+	formulaRepo := "homebrew-" + productName
+	formulaFile := productName + ".rb"
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: githubToken})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 	client := github.NewClient(tc)
 
 	// Fetch previous file's SHA hash
 	stat, _, _, err := client.Repositories.GetContents(
-		packageOwner,
+		productOwner,
 		formulaRepo,
 		formulaFile,
 		&github.RepositoryContentGetOptions{},
 	)
 	if err != nil {
-		fmt.Println("Error")
+		fmt.Println(err)
 		os.Exit(1)
+	}
+
+	header := "blob " + fmt.Sprintf("%v", len(formula))
+	sha := hashCommit(header, formula)
+	if *stat.SHA == sha {
+		fmt.Println("No changes")
+		os.Exit(0)
 	}
 
 	// Update formula
 	content := &github.RepositoryContentFileOptions{
 		Message: &commitMessage,
-		Content: []byte(formula),
+		Content: formula,
 		SHA:     stat.SHA,
 		Committer: &github.CommitAuthor{
 			Name:  &commitAuthor,
@@ -148,14 +206,15 @@ func doPush(c *cli.Context) {
 		},
 	}
 	res, _, err := client.Repositories.UpdateFile(
-		packageOwner,
+		productOwner,
 		formulaRepo,
 		formulaFile,
 		content,
 	)
-	fmt.Println(res)
 	if err != nil {
-		fmt.Println("Error")
+		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	fmt.Println(*res.SHA)
 }
