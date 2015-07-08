@@ -166,6 +166,15 @@ func doPush(c *cli.Context) {
 	}
 	formula := buf.Bytes()
 
+	content := &github.RepositoryContentFileOptions{
+		Message: &commitMessage,
+		Content: formula,
+		Committer: &github.CommitAuthor{
+			Name:  &commitAuthor,
+			Email: &commitAuthorEmail,
+		},
+	}
+
 	// Prepare for github API request
 	formulaRepo := "homebrew-" + productName
 	formulaFile := productName + ".rb"
@@ -174,53 +183,24 @@ func doPush(c *cli.Context) {
 	client := github.NewClient(tc)
 
 	// Fetch previous file's SHA hash
-	stat, _, _, err := client.Repositories.GetContents(
+	stat, _, _, _ := client.Repositories.GetContents(
 		productOwner,
 		formulaRepo,
 		formulaFile,
 		&github.RepositoryContentGetOptions{},
 	)
-	if err != nil {
-		// Create file
-		content := &github.RepositoryContentFileOptions{
-			Message: &commitMessage,
-			Content: formula,
-			Committer: &github.CommitAuthor{
-				Name:  &commitAuthor,
-				Email: &commitAuthorEmail,
-			},
-		}
-		res, _, err := client.Repositories.CreateFile(
-			productOwner,
-			formulaRepo,
-			formulaFile,
-			content,
-		)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
 
-		fmt.Println(*res.SHA)
-	} else {
-		// Update file
+	if stat != nil {
+		// Avoid no-change commit
 		header := "blob " + fmt.Sprintf("%v", len(formula))
 		sha := hashCommit(header, formula)
 		if *stat.SHA == sha {
 			fmt.Println("No changes")
 			os.Exit(0)
 		}
+		content.SHA = stat.SHA
 
-		content := &github.RepositoryContentFileOptions{
-			Message: &commitMessage,
-			Content: formula,
-			SHA:     stat.SHA,
-			Committer: &github.CommitAuthor{
-				Name:  &commitAuthor,
-				Email: &commitAuthorEmail,
-			},
-		}
-
+		// Upload changes
 		res, _, err := client.Repositories.UpdateFile(
 			productOwner,
 			formulaRepo,
@@ -231,7 +211,19 @@ func doPush(c *cli.Context) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-
+		fmt.Println(*res.SHA)
+	} else {
+		// Create file
+		res, _, err := client.Repositories.CreateFile(
+			productOwner,
+			formulaRepo,
+			formulaFile,
+			content,
+		)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 		fmt.Println(*res.SHA)
 	}
 }
