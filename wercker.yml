@@ -46,10 +46,10 @@ deploy:
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
         file: snapshot/solver_windows_386.zip
-    - uetchy/homebrew:
-        token: $GITHUB_TOKEN
-        version: 1.0.0
-        name: solver
-        owner: uetchy
-        file64: snapshot/solver_darwin_amd64.zip
-        file32: snapshot/solver_darwin_386.zip
+    # - uetchy/homebrew:
+    #     token: $GITHUB_TOKEN
+    #     version: 1.0.0
+    #     name: solver
+    #     owner: uetchy
+    #     file64: snapshot/solver_darwin_amd64.zip
+    #     file32: snapshot/solver_darwin_386.zip
