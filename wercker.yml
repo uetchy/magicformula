@@ -21,7 +21,6 @@ deploy:
         name: restore variables
         code: |
           export RELEASE_TAG=$(cat .release_tag)
-          export RELEASE_VERSION=$(cat .release_tag | sed 's/^v//')
     - tcnksm/ghr:
        token: $GITHUB_TOKEN
        input: snapshot
@@ -29,6 +28,6 @@ deploy:
        replace: true
     - uetchy/homebrew:
         token: $GITHUB_TOKEN
-        version: $RELEASE_VERSION
+        tag: $RELEASE_TAG
         file64: snapshot/solver_darwin_amd64.zip
         file32: snapshot/solver_darwin_386.zip
