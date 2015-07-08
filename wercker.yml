@@ -15,10 +15,6 @@ build:
         name: output release tag
         code: |
           git describe --tags --exact --match 'v*' > $WERCKER_OUTPUT_DIR/.release_tag || warning "No release tag"
-  after-steps:
-    - slack-notifier:
-        url: $SLACK_URL
-        channel: random
 deploy:
   steps:
     - script:
@@ -52,7 +48,3 @@ deploy:
         version: $RELEASE_VERSION
         file64: snapshot/solver_darwin_amd64.zip
         file32: snapshot/solver_darwin_386.zip
-  after-steps:
-    - slack-notifier:
-        url: $SLACK_URL
-        channel: random
