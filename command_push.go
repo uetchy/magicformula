@@ -26,40 +26,44 @@ var CommandPush = cli.Command{
 		},
 		cli.StringFlag{
 			Name:  "name",
-			Usage: "repo name",
+			Usage: "Repo name",
 		},
 		cli.StringFlag{
 			Name:  "owner",
-			Usage: "repo owner",
+			Usage: "Formula repo owner",
+		},
+		cli.StringFlag{
+			Name:  "product-owner",
+			Usage: "Product repo owner",
 		},
 		cli.StringFlag{
 			Name:  "message",
-			Usage: "commit message",
+			Usage: "Commit message",
 		},
 		cli.StringFlag{
 			Name:  "committer",
-			Usage: "committer name",
+			Usage: "Committer name",
 		},
 		cli.StringFlag{
 			Name:  "committer-email",
-			Usage: "committer email",
+			Usage: "Committer email",
+		},
+		cli.StringFlag{
+			Name:   "tag",
+			Usage:  "Release tag",
+			EnvVar: "RELEASE_TAG",
 		},
 		cli.StringFlag{
 			Name:  "version",
 			Usage: "Version",
 		},
 		cli.StringFlag{
-			Name:   "tag",
-			Usage:  "release tag",
-			EnvVar: "RELEASE_TAG",
-		},
-		cli.StringFlag{
 			Name:  "target-path-64",
-			Usage: "64bit",
+			Usage: "Package path for 64bit arch",
 		},
 		cli.StringFlag{
 			Name:  "target-path-32",
-			Usage: "32bit",
+			Usage: "Package path for 32bit arch",
 		},
 	},
 	Action: doPush,
@@ -107,15 +111,24 @@ func doPush(c *cli.Context) {
 		fmt.Println("Missing 'name'")
 		os.Exit(1)
 	}
-	productOwner := c.String("owner")
-	if productOwner == "" {
+	formulaOwner := c.String("owner")
+	if formulaOwner == "" {
 		fmt.Println("Missing 'owner'")
+		os.Exit(1)
+	}
+	productOwner := c.String("product-owner")
+	if productOwner == "" {
+		productOwner = formulaOwner
+	}
+	releaseTag := c.String("tag")
+	if releaseTag == "" {
+		fmt.Println("Missing 'tag'")
 		os.Exit(1)
 	}
 	productVersion := c.String("version")
 	if productVersion == "" {
-		fmt.Println("Missing 'version'")
-		os.Exit(1)
+		re, _ := regexp.Compile("^v")
+		productVersion = re.ReplaceAllString(releaseTag, "")
 	}
 	targetPath64 := c.String("target-path-64")
 	if targetPath64 == "" {
@@ -125,7 +138,7 @@ func doPush(c *cli.Context) {
 	targetPath32 := c.String("target-path-32")
 	commitMessage := c.String("message")
 	if commitMessage == "" {
-		commitMessage = "Deploy from " + productOwner
+		commitMessage = "Deploy from " + formulaOwner
 	}
 	commitAuthor := c.String("committer")
 	if commitAuthor == "" {
@@ -136,10 +149,6 @@ func doPush(c *cli.Context) {
 	if commitAuthorEmail == "" {
 		fmt.Println("Missing 'committer-email'")
 		os.Exit(1)
-	}
-	releaseTag := c.String("tag")
-	if releaseTag == "" {
-		releaseTag = "v" + productVersion
 	}
 
 	// Generate formula
@@ -184,7 +193,7 @@ func doPush(c *cli.Context) {
 
 	// Fetch previous file's SHA hash
 	stat, _, _, _ := client.Repositories.GetContents(
-		productOwner,
+		formulaOwner,
 		formulaRepo,
 		formulaFile,
 		&github.RepositoryContentGetOptions{},
@@ -202,7 +211,7 @@ func doPush(c *cli.Context) {
 
 		// Upload changes
 		res, _, err := client.Repositories.UpdateFile(
-			productOwner,
+			formulaOwner,
 			formulaRepo,
 			formulaFile,
 			content,
@@ -211,11 +220,12 @@ func doPush(c *cli.Context) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
 		fmt.Println(*res.SHA)
 	} else {
 		// Create file
 		res, _, err := client.Repositories.CreateFile(
-			productOwner,
+			formulaOwner,
 			formulaRepo,
 			formulaFile,
 			content,
@@ -224,6 +234,7 @@ func doPush(c *cli.Context) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
 		fmt.Println(*res.SHA)
 	}
 }
