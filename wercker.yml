@@ -14,7 +14,7 @@ build:
     - script:
         name: output release tag
         code: |
-          git describe --tags --exact --match 'v*' > $WERCKER_OUTPUT_DIR/.release_tag || warn "No release tag"
+          git describe --tags --match 'v*' > $WERCKER_OUTPUT_DIR/.release_tag || warn "No release tag"
 deploy:
   steps:
     - script:
@@ -22,27 +22,11 @@ deploy:
         code: |
           export RELEASE_TAG=$(cat .release_tag)
           export RELEASE_VERSION=$(cat .release_tag | sed 's/^v//')
-    - wercker/github-create-release:
-        token: $GITHUB_TOKEN
-        tag: $RELEASE_TAG
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/solver_darwin_amd64.zip
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/solver_darwin_386.zip
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/solver_linux_amd64.tar.gz
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/solver_linux_386.tar.gz
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/solver_windows_amd64.zip
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/solver_windows_386.zip
+    - tcnksm/ghr:
+       token: $GITHUB_TOKEN
+       input: snapshot
+       version: $RELEASE_TAG
+       replace: true
     - uetchy/homebrew:
         token: $GITHUB_TOKEN
         version: $RELEASE_VERSION
