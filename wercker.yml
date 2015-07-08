@@ -15,17 +15,21 @@ build:
         name: output release tag
         code: |
           git describe --tags --exact --match 'v*' > $WERCKER_OUTPUT_DIR/.release_tag || true
-          cat $WERCKER_OUTPUT_DIR/.release_tag | sed 's/^v//' > $WERCKER_OUTPUT_DIR/.release_version || true
     - script:
         name: list
         code: |
           ls -al $WERCKER_OUTPUT_DIR
+  after-steps:
+    - slack-notifier:
+        url: $SLACK_URL
+        channel: random
 deploy:
   steps:
     - script:
-        name: restore release tag
+        name: restore variables
         code: |
           export RELEASE_TAG=$(cat .release_tag)
+          export RELEASE_VERSION=$(cat .release_tag | sed 's/^v//')
     - wercker/github-create-release:
         token: $GITHUB_TOKEN
         tag: $RELEASE_TAG
@@ -47,10 +51,12 @@ deploy:
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
         file: snapshot/solver_windows_386.zip
-    # - uetchy/homebrew:
-    #     token: $GITHUB_TOKEN
-    #     version: 1.0.0
-    #     name: solver
-    #     owner: uetchy
-    #     file64: snapshot/solver_darwin_amd64.zip
-    #     file32: snapshot/solver_darwin_386.zip
+    - uetchy/homebrew:
+        token: $GITHUB_TOKEN
+        version: $RELEASE_VERSION
+        file64: snapshot/solver_darwin_amd64.zip
+        file32: snapshot/solver_darwin_386.zip
+  after-steps:
+    - slack-notifier:
+        url: $SLACK_URL
+        channel: random
