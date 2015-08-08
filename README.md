@@ -4,7 +4,15 @@ CLI to generate Homebrew formula.
 
 ## Install
 
-```session
+with Homebrew:
+
+```
+$ brew install uetchy/solver/solver
+```
+
+or `go get` directly:
+
+```
 $ go get -d github.com/uetchy/solver
 ```
 
