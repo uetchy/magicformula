@@ -1,6 +1,6 @@
 # solver
 
-Keep your Homebrew's formula fresh.
+CLI to generate Homebrew formula.
 
 ## Install
 
@@ -42,7 +42,7 @@ There are all of available options.
 
 ## Working with [Wercker](http://wercker.com/)
 
-Using solver with Wercker is awesome combination!
+See [wercker-step-homebrew](https://github.com/uetchy/wercker-step-homebrew) to get further information.
 
 ## Contributing
 

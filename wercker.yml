@@ -15,6 +15,7 @@ build:
         name: output release tag
         code: |
           git describe --tags --exact --match 'v*' > $WERCKER_OUTPUT_DIR/.release_tag || warn "No release tag"
+          info $WERCKER_OUTPUT_DIR/.release_tag
 deploy:
   steps:
     - script:
@@ -22,10 +23,10 @@ deploy:
         code: |
           export RELEASE_TAG=$(cat .release_tag)
     - tcnksm/ghr:
-       token: $GITHUB_TOKEN
-       input: snapshot
-       version: $RELEASE_TAG
-       replace: true
+        token: $GITHUB_TOKEN
+        input: snapshot
+        version: $RELEASE_TAG
+        replace: true
     - uetchy/homebrew:
         token: $GITHUB_TOKEN
         tag: $RELEASE_TAG
