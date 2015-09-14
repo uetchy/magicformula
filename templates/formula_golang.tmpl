@@ -1,0 +1,39 @@
+require "language/go"
+
+class {{ .ClassName }} < Formula
+  url "{{ .URL }}", :tag => "{{ .Version }}"{{ if .Revision }}, :revision => "{{ .Revision }}"{{ end }}
+  sha256 "{{ .CheckSum }}"
+  {{ if .Description }}desc "{{ .Description }}"{{ end }}
+  {{ if .Homepage }}homepage "{{ .Homepage }}"{{ end }}
+
+  head "{{ .URL }}", :branch => "master"
+
+  option "without-completions", "Disable zsh completions"
+
+  depends_on "go" => :build
+
+  {{ range .Deps }}
+  go_resource "{{ .Name }}" do
+    url "{{ .URL }}", :revision => "{{ .Revision }}"
+  end
+  {{ end }}
+
+  def install
+    mkdir_p "#{buildpath}/src/{{ .Dir }}/"
+    ln_s buildpath, "#{buildpath}/src/{{ .URL }}"
+    ENV["GOPATH"] = buildpath
+    ENV.append_path "PATH", "#{ENV["GOPATH"]}/bin"
+    Language::Go.stage_deps resources, buildpath/"src"
+
+    system "go", "build", "-ldflags", "-X main.Version #{version}", "-o", "{{ .Name }}"
+    bin.install "{{ .Name }}"
+
+    if build.with? "completions"
+      zsh_completion.install "zsh/_{{ .Name }}"
+    end
+  end
+
+  test do
+    assert_match "{{ .Name }} version #{version}", shell_output("#{bin}/{{ .Name }} -v")
+  end
+end
