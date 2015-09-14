@@ -1,58 +1,51 @@
-# solver
-
-CLI to generate Homebrew formula.
+# magicformula
+Generate and upload Homebrew Formula.
 
 ## Install
-
 with Homebrew:
 
 ```
-$ brew install uetchy/solver/solver
+$ brew install uetchy/magicformula/magicformula
 ```
 
 or `go get` directly:
 
 ```
-$ go get -d github.com/uetchy/solver
+$ go get -d github.com/uetchy/magicformula
 ```
 
 ## Usage
 
 ```session
-solver push \
-  --token "123456789abcdefghijklmnopqrstuvwxyz" \
-  --name "awesome-cli-app" \
-  --owner "uetchy" \
-  --tag "v1.0.0" \
-  --target-path-64 "./dist/darwin_amd64.tar.gz" \
-  --target-path-32 "./dist/darwin_386.tar.gz" \
-  --committer "uetchy" \
-  --committer-email "uetchy@randompaper.co"
+RELEASE_TAG=v1.0.0
+GITHUB_USER=uetchy
+GITHUB_TOKEN=123456789abcdefghijklmnopqrstuvwxyz
+MF_PACKAGE_PATH="./bin/darwin_amd64"
+magicformula push
 ```
 
 ## Options
-
 There are all of available options.
 
-|option |description          |
-|-------|---------------------|
-|token  |Github access token  |
-|name   |Formula repo         |
-|owner  |Owner of formula repo|
-|tag    |Release tag          |
-|committer|Commit author      |
-|committer-email|Commit author email|
-|target-path-64|binary or package(64)|
-|target-path-32 (optional)|binary or package(32)|
-|version (optional)|Formula's Version|
-|product-owner (optional)|Owner of product repo|
-|message (optional)|Commit message|
+option                            | description
+--------------------------------- | ---------------------
+GITHUB_TOKEN                      | Github access token
+GITHUB_USER                       | Owner of formula repo
+RELEASE_TAG                       | Release tag
+MF_PACKAGE_PATH                   | binary or package
+MF_PACKAGE_NAME (optional)        | Package name
+MF_GIT_COMMITTER (optional)       | Commit author
+MF_GIT_COMMITTER_EMAIL (optional) | Commit author email
+MF_COMMIT_MESSAGE (optional)      | Commit message
 
-## Working with [Wercker](http://wercker.com/)
-
+## Working on [Wercker](http://wercker.com/)
 See [wercker-step-homebrew](https://github.com/uetchy/wercker-step-homebrew) to get further information.
 
 ## Contributing
+This step currently focusing on Golang project. If you have any idea of creating formula for another language's project, please feel free to submit Pull-request or create issues.
 
-This step currently focusing on Golang project.
-If you have any idea of creating formula for another language's project, please feel free to submit Pull-request or create issues.
+
+
+git clone https://<token>@github.com/owner/repo.git
+cd repo
+magicformula
