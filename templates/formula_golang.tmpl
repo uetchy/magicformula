@@ -1,0 +1,17 @@
+{{ define "golang_install" }}
+    mkdir_p "#{buildpath}/src/{{ .GolangImportDir }}"
+    ln_s buildpath, "#{buildpath}/src/{{ .GolangImportPath }}"
+    ENV["GOPATH"] = buildpath
+    ENV.append_path "PATH", "#{ENV["GOPATH"]}/bin"
+    Language::Go.stage_deps resources, buildpath/"src"
+
+    system "go", "build", "-ldflags", "-X main.Version #{version}", "-o", "{{ .Name }}"
+    bin.install "{{ .Name }}"
+    {{ if .ZshCompletionsPath }}if build.with? "completions"
+      zsh_completion.install "zsh/_{{ .Name }}"
+    end{{ end }}
+{{ end }}
+
+{{ define "golang_test" }}
+    assert_match "{{ .Name }} version #{version}", shell_output("#{bin}/{{ .Name }} -v")
+{{ end }}

@@ -7,13 +7,13 @@ import (
 
 var Version string = "HEAD"
 var Commands = []cli.Command{
-	CommandPush,
+	CommandBuild,
 }
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "solver"
-	app.Usage = "Keep your Homebrew's Formula fresh"
+	app.Name = "magicformula"
+	app.Usage = "Homebrew formula generator"
 	app.Version = Version
 	app.Author = "Yasuaki Uechi"
 	app.Email = "uetchy@randompaper.co"

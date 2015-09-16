@@ -1,22 +1,32 @@
-require "formula"
+{{ if eq .Kind "golang" }}require "language/go"{{ end }}
 
 class {{ .ClassName }} < Formula
-  version "{{ .Version }}"
+  url "{{ .URL }}"{{ if eq .URLScheme "scm" }}, :tag => "{{ .Tag }}"{{ end }}{{ if .Revision }}, :revision => "{{ .Revision }}"{{ end }}
+  {{ if eq .URLScheme "scm" }}version "{{ .Tag }}"{{ end }}{{/*
+  */}}{{ if eq .URLScheme "archive" }}sha256 "{{ .CheckSum }}"
+  {{ end }}{{/*
+  */}}{{ if .Description }}desc "{{ .Description }}"
+  {{ end }}{{/*
+  */}}{{ if .Homepage }}homepage "{{ .Homepage }}"
+  {{ end }}{{/*
+  */}}
 
-  {{ if .TargetUrl32 }}
-  if Hardware.is_64_bit?
-    url "{{ .TargetUrl64 }}"
-    sha256 "{{ .TargetHash64 }}"
-  else
-    url "{{ .TargetUrl32 }}"
-    sha256 "{{ .TargetHash32 }}"
+  head "{{ .Head }}", :branch => "master"
+
+  {{ if .ZshCompletionsPath }}option "without-completions", "Disable zsh completions"{{ end }}{{/*
+  */}}{{ if eq .Kind "golang" }}depends_on "go" => :build{{ end }}{{ range .Deps }}
+  depends_on "{{ .Name }}" => :{{ .Extra }}{{ end }}
+  {{ range .GoResources }}
+  go_resource "{{ .Name }}" do
+    url "{{ .URL }}"{{ if .Revision }}, :revision => "{{ .Revision }}"{{ end }}
   end
-  {{ else }}
-  url "{{ .TargetUrl64 }}"
-  sha256 "{{ .TargetHash64 }}"
   {{ end }}
-
   def install
-    bin.install "{{ .BinName }}"
+    {{ if eq .Kind "golang" }}{{ template "golang_install" . }}{{ else }}{{ template "general_install" . }}{{ end }}
+  end
+
+  test do
+    {{ if eq .Kind "golang" }}{{ template "golang_test" . }}{{/*
+    */}}{{ else }}{{ template "general_test" . }}{{ end }}
   end
 end
