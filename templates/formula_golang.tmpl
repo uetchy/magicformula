@@ -1,26 +1,27 @@
 require "language/go"
 
 class {{ .ClassName }} < Formula
-  url "{{ .URL }}", :tag => "{{ .Tag }}"{{ if .Revision }}, :revision => "{{ .Revision }}"{{ end }}
-  sha256 "{{ .CheckSum }}"
-  {{ if .Description }}desc "{{ .Description }}"{{ end }}
-  {{ if .Homepage }}homepage "{{ .Homepage }}"{{ end }}
-
+  url "{{ .URL }}"{{ if eq .URLScheme "scm" }}, :tag => "{{ .Tag }}"{{ end }}{{ if .Revision }}, :revision => "{{ .Revision }}"{{ end }}
+  {{ if eq .URLScheme "archive" }}sha256 "{{ .CheckSum }}"
+  {{ end }}{{/*
+  */}}{{ if .Description }}desc "{{ .Description }}"
+  {{ end }}{{/*
+  */}}{{ if .Homepage }}homepage "{{ .Homepage }}"
+  {{ end }}{{/*
+  */}}
   head "{{ .Head }}", :branch => "master"
 
   option "without-completions", "Disable zsh completions"
 
   depends_on "go" => :build
-
   {{ range .Deps }}
   go_resource "{{ .Name }}" do
-    url "{{ .URL }}", :revision => "{{ .Revision }}"
+    url "{{ .URL }}"{{ if .Revision }}, :revision => "{{ .Revision }}"{{ end }}
   end
   {{ end }}
-
   def install
-    mkdir_p "#{buildpath}/src/{{ .Dir }}/"
-    ln_s buildpath, "#{buildpath}/src/{{ .URL }}"
+    mkdir_p "#{buildpath}/src/{{ .GolangImportDir }}"
+    ln_s buildpath, "#{buildpath}/src/{{ .GolangImportPath }}"
     ENV["GOPATH"] = buildpath
     ENV.append_path "PATH", "#{ENV["GOPATH"]}/bin"
     Language::Go.stage_deps resources, buildpath/"src"

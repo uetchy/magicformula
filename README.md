@@ -2,41 +2,41 @@
 Generate and upload Homebrew Formula.
 
 ## Install
-with Homebrew:
-
-```
-$ brew install uetchy/magicformula/magicformula
-```
-
-or `go get` directly:
+`go get` directly:
 
 ```
 $ go get -d github.com/uetchy/magicformula
 ```
 
 ## Usage
+with git repository:
 
-```session
-RELEASE_TAG=v1.0.0
-GITHUB_USER=uetchy
-GITHUB_TOKEN=123456789abcdefghijklmnopqrstuvwxyz
-MF_PACKAGE_PATH="./bin/darwin_amd64"
-magicformula push
+```bash
+magicformula build \
+  --url="https://github.com/uetchy/awesomeapp.git" \
+  --tag v1.2.0 > awesomeapp.rb
+```
+
+with archived package:
+
+```bash
+magicformula build \
+  --path=./v1.2.0.tar.gz \
+  --url="https://github.com/uetchy/awesomeapp/archive/v1.2.0.tar.gz" \
+  --tag v1.2.0 > awesomeapp.rb
 ```
 
 ## Options
 There are all of available options.
 
-option                            | description
---------------------------------- | ---------------------
-GITHUB_TOKEN                      | Github access token
-GITHUB_USER                       | Owner of formula repo
-RELEASE_TAG                       | Release tag
-PACKAGE_PATH                   | binary or package
-PACKAGE_NAME (optional)        | Package name
-GIT_COMMITTER (optional)       | Commit author
-GIT_COMMITTER_EMAIL (optional) | Commit author email
-COMMIT_MESSAGE (optional)      | Commit message
+option        | description
+------------- | ----------------------------------
+--description | Package description [$DESCRIPTION]
+--name        | Package name [$PACKAGE_NAME]
+--tag         | Release tag [$RELEASE_TAG]
+--homepage    | Homepage [$HOMEPAGE]
+--path        | Package path [$PACKAGE_PATH]
+--url         | Package url [$PACKAGE_URL]
 
 ## [Wercker](http://wercker.com/) step
 See [wercker-step-homebrew](https://github.com/uetchy/wercker-step-homebrew) to get further information.

@@ -13,7 +13,7 @@ var Commands = []cli.Command{
 func main() {
 	app := cli.NewApp()
 	app.Name = "magicformula"
-	app.Usage = "Generate and upload Homebrew Formula"
+	app.Usage = "Homebrew formula generator"
 	app.Version = Version
 	app.Author = "Yasuaki Uechi"
 	app.Email = "uetchy@randompaper.co"

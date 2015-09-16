@@ -6,52 +6,24 @@ import (
 	"errors"
 	"fmt"
 	"github.com/codegangsta/cli"
-	"github.com/google/go-github/github"
+	"github.com/libgit2/git2go"
 	"github.com/motemen/go-gitconfig"
-	"golang.org/x/oauth2"
+	"go/build"
+	"net/url"
 	"os"
 	"path/filepath"
 )
 
 var buildFlags = []cli.Flag{
-	cli.BoolFlag{
-		Name:  "push",
-		Usage: "Push formula to GitHub",
-	},
 	cli.StringFlag{
 		Name:   "description",
 		Usage:  "Package description",
 		EnvVar: "DESCRIPTION",
 	},
 	cli.StringFlag{
-		Name:   "token",
-		Usage:  "Github token",
-		EnvVar: "GITHUB_TOKEN",
-	},
-	cli.StringFlag{
-		Name:   "owner",
-		Usage:  "Repo owner",
-		EnvVar: "GITHUB_USER",
-	},
-	cli.StringFlag{
 		Name:   "name",
 		Usage:  "Package name",
 		EnvVar: "PACKAGE_NAME",
-	},
-	cli.StringFlag{
-		Name:   "commit-message",
-		Usage:  "Commit message",
-		EnvVar: "COMMIT_MESSAGE",
-	},
-	cli.StringFlag{
-		Name:   "committer",
-		Usage:  "Committer name",
-		EnvVar: "COMMITTER",
-	},
-	cli.StringFlag{
-		Name:   "committer-email",
-		Usage:  "Committer email",
-		EnvVar: "COMMITTER_EMAIL",
 	},
 	cli.StringFlag{
 		Name:   "tag",
@@ -64,14 +36,14 @@ var buildFlags = []cli.Flag{
 		EnvVar: "HOMEPAGE",
 	},
 	cli.StringFlag{
-		Name:   "package-path",
-		Usage:  "Package path for 64bit arch",
+		Name:   "path",
+		Usage:  "Package path",
 		EnvVar: "PACKAGE_PATH",
 	},
 	cli.StringFlag{
-		Name:   "homepage",
-		Usage:  "Homepage",
-		EnvVar: "HOMEPAGE",
+		Name:   "url",
+		Usage:  "Package url",
+		EnvVar: "PACKAGE_URL",
 	},
 }
 
@@ -84,8 +56,8 @@ var CommandBuild = cli.Command{
 func doBuild(c *cli.Context) {
 	name := c.String("name")
 	tag := c.String("tag")
-	packagePath := c.String("package-path")
-	url := c.String("url")
+	packagePath := c.String("path")
+	packageURL := c.String("url")
 	head := c.String("head")
 	homepage := c.String("homepage")
 	description := c.String("description")
@@ -98,12 +70,12 @@ func doBuild(c *cli.Context) {
 	if head == "" {
 		head, _ = gitconfig.GetString("remote.origin.url")
 	}
-	if tag == "" {
-		fmt.Println(errors.New("Missing 'tag'"))
+	if packageURL == "" {
+		fmt.Println(errors.New("Missing 'url'"))
 		os.Exit(1)
 	}
-	if packagePath == "" {
-		fmt.Println(errors.New("Missing 'package-path'"))
+	if tag == "" {
+		fmt.Println(errors.New("Missing 'tag'"))
 		os.Exit(1)
 	}
 
@@ -112,108 +84,43 @@ func doBuild(c *cli.Context) {
 		Name:        name,
 		Description: description,
 		Tag:         tag,
-		URL:         url,
+		URL:         packageURL,
 		Head:        head,
 		Homepage:    homepage,
-		PackagePath:  packagePath,
+		PackagePath: packagePath,
 	}
-	formulaData := formula.Format("templates/formula_golang.tmpl")
+
+	cwd, _ := os.Getwd()
+	rootPackage, _ := build.Import(".", cwd, 0)
+	deps := make([]Dep, 0)
+	for _, dep := range rootPackage.Imports {
+		if d, _ := build.Import(dep, cwd, 0); d.Goroot == false {
+			depName := d.Name
+			depPath := d.ImportPath
+			depURL, _ := url.Parse(depPath)
+			var properDepURL string
+			switch depURL.Host {
+			case "golang.org":
+				properDepURL = "https://github.com/golang/" + depName + ".git"
+			default:
+				properDepURL = "https://" + depPath + ".git"
+			}
+			repo, _ := git.InitRepository(d.Dir, false)
+			headCommit, _ := repo.RevparseSingle("HEAD")
+			headRevision := headCommit.Id().String()
+			deps = append(deps, Dep{
+				Name:     depPath,
+				URL:      properDepURL,
+				Revision: headRevision,
+			})
+		}
+	}
+	formula.Deps = deps
+	formulaData := formula.Format()
 
 	if c.Bool("push") == false {
 		fmt.Println(string(formulaData))
 		os.Exit(0)
-	}
-
-	// Push to GitHub
-	token := c.String("token")
-	owner := c.String("owner")
-	committer := c.String("committer")
-	committerEmail := c.String("committer-email")
-	commitMessage := c.String("commit-message")
-
-	if token == "" {
-		fmt.Println(errors.New("Missing 'token'"))
-		os.Exit(1)
-	}
-	if owner == "" {
-		githubUser, err := gitconfig.GetString("github.user")
-		if err != nil {
-			owner = githubUser
-		} else {
-			fmt.Println(errors.New("Missing 'owner'"))
-			os.Exit(1)
-		}
-	}
-	if committer == "" {
-		userName, err := gitconfig.GetString("user.name")
-		if err != nil {
-			committer = userName
-		} else {
-			fmt.Println(errors.New("Missing 'committer'"))
-			os.Exit(1)
-		}
-	}
-	if committerEmail == "" {
-		userEmail, err := gitconfig.GetString("user.email")
-		if err != nil {
-			committerEmail = userEmail
-		} else {
-			fmt.Println(errors.New("Missing 'committer-email'"))
-			os.Exit(1)
-		}
-	}
-
-	content := &github.RepositoryContentFileOptions{
-		Message: &commitMessage,
-		Content: formulaData,
-		Committer: &github.CommitAuthor{
-			Name:  &committer,
-			Email: &committerEmail,
-		},
-	}
-
-	// Prepare for github API request
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	tc := oauth2.NewClient(oauth2.NoContext, ts)
-	client := github.NewClient(tc)
-	repo := "homebrew-" + name
-	filename := name + ".rb"
-
-	// Fetch previous file's SHA hash
-	stat, _, _, _ := client.Repositories.GetContents(
-		owner,
-		repo,
-		filename,
-		&github.RepositoryContentGetOptions{},
-	)
-
-	var fileFunc func(string, string, string, *github.RepositoryContentFileOptions) (*github.RepositoryContentResponse, *github.Response, error)
-	if stat != nil {
-		// Avoid no-change commit
-		header := "blob " + fmt.Sprintf("%v", len(formulaData))
-		sha := hashCommit(header, formulaData)
-		if *stat.SHA == sha {
-			fmt.Println(errors.New("No changes"))
-			os.Exit(0)
-		}
-		content.SHA = stat.SHA
-
-		// Upload changes
-		fileFunc = client.Repositories.UpdateFile
-	} else {
-		fileFunc = client.Repositories.CreateFile
-	}
-	res, _, err := fileFunc(
-		owner,
-		repo,
-		filename,
-		content,
-	)
-	fmt.Println(*res.SHA) // DEBUG:
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
 	}
 }
 
