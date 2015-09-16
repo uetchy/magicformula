@@ -32,13 +32,13 @@ option                            | description
 GITHUB_TOKEN                      | Github access token
 GITHUB_USER                       | Owner of formula repo
 RELEASE_TAG                       | Release tag
-MF_PACKAGE_PATH                   | binary or package
-MF_PACKAGE_NAME (optional)        | Package name
-MF_GIT_COMMITTER (optional)       | Commit author
-MF_GIT_COMMITTER_EMAIL (optional) | Commit author email
-MF_COMMIT_MESSAGE (optional)      | Commit message
+PACKAGE_PATH                   | binary or package
+PACKAGE_NAME (optional)        | Package name
+GIT_COMMITTER (optional)       | Commit author
+GIT_COMMITTER_EMAIL (optional) | Commit author email
+COMMIT_MESSAGE (optional)      | Commit message
 
-## Working on [Wercker](http://wercker.com/)
+## [Wercker](http://wercker.com/) step
 See [wercker-step-homebrew](https://github.com/uetchy/wercker-step-homebrew) to get further information.
 
 ## Contributing

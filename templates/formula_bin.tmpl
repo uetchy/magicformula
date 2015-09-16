@@ -4,7 +4,7 @@ class {{ .ClassName }} < Formula
   {{ if .Description }} desc "{{ .Description }}" {{ end }}
   {{ if .Homepage }} homepage "{{ .Homepage }}" {{ end }}
 
-  head "{{ .URL }}", :branch => "master"
+  head "{{ .Head }}", :branch => "master"
 
   option "without-completions", "Disable completions"
 

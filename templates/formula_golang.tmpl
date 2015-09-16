@@ -1,12 +1,12 @@
 require "language/go"
 
 class {{ .ClassName }} < Formula
-  url "{{ .URL }}", :tag => "{{ .Version }}"{{ if .Revision }}, :revision => "{{ .Revision }}"{{ end }}
+  url "{{ .URL }}", :tag => "{{ .Tag }}"{{ if .Revision }}, :revision => "{{ .Revision }}"{{ end }}
   sha256 "{{ .CheckSum }}"
   {{ if .Description }}desc "{{ .Description }}"{{ end }}
   {{ if .Homepage }}homepage "{{ .Homepage }}"{{ end }}
 
-  head "{{ .URL }}", :branch => "master"
+  head "{{ .Head }}", :branch => "master"
 
   option "without-completions", "Disable zsh completions"
 

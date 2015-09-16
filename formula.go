@@ -17,11 +17,12 @@ type Formula struct {
 	Kind        string // "golang"
 	Name        string // "magicformula"
 	Description string // "awesome app"
-	Version     string // "v1.2.0"
+	Tag         string // "v1.2.0"
 	Revision    string // "b6f7aadbeb21ae18972577173ce175af83ce239d"
-	URL         string // "https://github.com/uetchy/magicformula.git"
+	URL         string // "https://github.com/uetchy/magicformula-1.8.tar.gz"
+	Head        string // "https://github.com/uetchy/magicformula.git"
 	Homepage    string // "https://github.com/uetchy/magicformula"
-	TargetPath  string // "/path/to/bin/magicformula"
+	PackagePath  string // "/path/to/bin/magicformula"
 	Deps        []Dep
 }
 
@@ -33,7 +34,7 @@ type Dep struct {
 
 func (f *Formula) CheckSum() string {
 	hasher := sha1.New()
-	fp, err := os.Open(f.TargetPath)
+	fp, err := os.Open(f.PackagePath)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -54,7 +55,7 @@ func (f *Formula) ClassName() string {
 }
 
 func (f *Formula) Dir() string {
-	return filepath.Dir(f.TargetPath)
+	return filepath.Dir(f.PackagePath)
 }
 
 func (f *Formula) Format(tmplName string) []byte {
