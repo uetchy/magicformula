@@ -14,34 +14,39 @@ import (
 )
 
 type Formula struct {
-	Kind        string // "golang"
-	Name        string // "magicformula"
-	Description string // "awesome app"
-	Tag         string // "v1.2.0"
-	Revision    string // "b6f7aadbeb21ae18972577173ce175af83ce239d"
-	URL         string // "https://~~/magicformula.tar.gz" or "https://~~/magicformula.git"
-	Head        string // "https://github.com/uetchy/magicformula.git"
-	Homepage    string // "https://github.com/uetchy/magicformula"
-	PackagePath string // "/path/to/bin/magicformula"
-	Deps        []Dep
+	Kind               string // "golang"
+	Name               string // "magicformula"
+	Description        string // "awesome app"
+	Tag                string // "v1.2.0"
+	Revision           string // "b6f7aadbeb21ae18972577173ce175af83ce239d"
+	URL                string // "https://~~/magicformula.tar.gz" or "https://~~/magicformula.git"
+	Head               string // "https://github.com/uetchy/magicformula.git"
+	Homepage           string // "https://github.com/uetchy/magicformula"
+	PackagePath        string // "/path/to/bin/magicformula"
+	ZshCompletionsPath string
+	Deps               []Dep
+	GoResources        []GoResource
 }
 
 type Dep struct {
-	Name     string // "cli"
-	URL      string // "github.com/codegangsta/cli"
-	Revision string // "b6f7aadbeb21ae18972577173ce175af83ce239d"
+	Name  string
+	Extra string
 }
 
 // Returns kind of package url
 func (f *Formula) URLScheme() string {
 	switch filepath.Ext(f.URL) {
-	case ".tar.gz":
+	case ".gz":
 		return "archive"
 	case ".git":
 		return "scm"
 	default:
 		return "binary"
 	}
+}
+
+func (f *Formula) TemplatePath(phase string) string {
+	return f.Kind + "_" + phase
 }
 
 // Generate sha256 checksum from PackagePath.
@@ -70,9 +75,10 @@ func (f *Formula) ClassName() string {
 
 // Generate formula file
 func (f *Formula) Format() []byte {
-	tmpl := template.Must(template.ParseFiles("templates/formula_" + f.Kind + ".tmpl"))
+	t := template.New("formula.tmpl")
+	t = template.Must(t.ParseGlob("templates/*.tmpl"))
 	var buf bytes.Buffer
-	err := tmpl.Execute(&buf, f)
+	err := t.Execute(&buf, f)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

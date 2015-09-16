@@ -16,6 +16,11 @@ import (
 
 var buildFlags = []cli.Flag{
 	cli.StringFlag{
+		Name:  "kind",
+		Usage: "Kind of packages",
+		Value: "general",
+	},
+	cli.StringFlag{
 		Name:   "description",
 		Usage:  "Package description",
 		EnvVar: "DESCRIPTION",
@@ -45,6 +50,15 @@ var buildFlags = []cli.Flag{
 		Usage:  "Package url",
 		EnvVar: "PACKAGE_URL",
 	},
+	cli.StringSliceFlag{
+		Name:   "build-dep",
+		Usage:  "Build dependencies",
+		EnvVar: "BUILD_DEP",
+	},
+	cli.StringFlag{
+		Name:  "zsh-completions",
+		Usage: "Path to zsh completions",
+	},
 }
 
 var CommandBuild = cli.Command{
@@ -54,6 +68,7 @@ var CommandBuild = cli.Command{
 }
 
 func doBuild(c *cli.Context) {
+	kind := c.String("kind")
 	name := c.String("name")
 	tag := c.String("tag")
 	packagePath := c.String("path")
@@ -61,7 +76,11 @@ func doBuild(c *cli.Context) {
 	head := c.String("head")
 	homepage := c.String("homepage")
 	description := c.String("description")
-	kind := "golang"
+	zshCompletionsPath := c.String("zsh-completions")
+	buildDeps := make([]Dep, 0)
+	for _, dep := range c.StringSlice("build-dep") {
+		buildDeps = append(buildDeps, Dep{dep, "build"})
+	}
 
 	if name == "" {
 		dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
@@ -80,42 +99,48 @@ func doBuild(c *cli.Context) {
 	}
 
 	formula := Formula{
-		Kind:        kind,
-		Name:        name,
-		Description: description,
-		Tag:         tag,
-		URL:         packageURL,
-		Head:        head,
-		Homepage:    homepage,
-		PackagePath: packagePath,
+		Kind:               kind,
+		Name:               name,
+		Description:        description,
+		Tag:                tag,
+		URL:                packageURL,
+		Head:               head,
+		Homepage:           homepage,
+		PackagePath:        packagePath,
+		Deps:               buildDeps,
+		ZshCompletionsPath: zshCompletionsPath,
 	}
 
-	cwd, _ := os.Getwd()
-	rootPackage, _ := build.Import(".", cwd, 0)
-	deps := make([]Dep, 0)
-	for _, dep := range rootPackage.Imports {
-		if d, _ := build.Import(dep, cwd, 0); d.Goroot == false {
-			depName := d.Name
-			depPath := d.ImportPath
-			depURL, _ := url.Parse(depPath)
-			var properDepURL string
-			switch depURL.Host {
-			case "golang.org":
-				properDepURL = "https://github.com/golang/" + depName + ".git"
-			default:
-				properDepURL = "https://" + depPath + ".git"
+	switch formula.Kind {
+	case "golang":
+		cwd, _ := os.Getwd()
+		rootPackage, _ := build.Import(".", cwd, 0)
+		goResources := make([]GoResource, 0)
+		for _, goResource := range rootPackage.Imports {
+			if d, _ := build.Import(goResource, cwd, 0); d.Goroot == false {
+				goResourceName := d.Name
+				goResourcePath := d.ImportPath
+				goResourceURL, _ := url.Parse(goResourcePath)
+				var properDepURL string
+				switch goResourceURL.Host {
+				case "golang.org":
+					properDepURL = "https://github.com/golang/" + goResourceName + ".git"
+				default:
+					properDepURL = "https://" + goResourcePath + ".git"
+				}
+				repo, _ := git.InitRepository(d.Dir, false)
+				headCommit, _ := repo.RevparseSingle("HEAD")
+				headRevision := headCommit.Id().String()
+				goResources = append(goResources, GoResource{
+					Name:     goResourcePath,
+					URL:      properDepURL,
+					Revision: headRevision,
+				})
 			}
-			repo, _ := git.InitRepository(d.Dir, false)
-			headCommit, _ := repo.RevparseSingle("HEAD")
-			headRevision := headCommit.Id().String()
-			deps = append(deps, Dep{
-				Name:     depPath,
-				URL:      properDepURL,
-				Revision: headRevision,
-			})
 		}
+		formula.GoResources = goResources
 	}
-	formula.Deps = deps
+
 	formulaData := formula.Format()
 
 	if c.Bool("push") == false {

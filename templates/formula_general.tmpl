@@ -1,0 +1,7 @@
+{{ define "general_install" }}
+    bin.install "{{ .Name }}"
+{{ end }}
+
+{{ define "general_test" }}
+    assert_match "{{ .Name }} version #{version}", shell_output("#{bin}/{{ .Name }} -v")
+{{ end }}

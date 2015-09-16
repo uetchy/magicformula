@@ -13,7 +13,8 @@ with git repository:
 
 ```bash
 magicformula build \
-  --url="https://github.com/uetchy/awesomeapp.git" \
+  --kind golang \
+  --url "https://github.com/uetchy/awesomeapp.git" \
   --tag v1.2.0 > awesomeapp.rb
 ```
 
