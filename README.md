@@ -42,10 +42,4 @@ MF_COMMIT_MESSAGE (optional)      | Commit message
 See [wercker-step-homebrew](https://github.com/uetchy/wercker-step-homebrew) to get further information.
 
 ## Contributing
-This step currently focusing on Golang project. If you have any idea of creating formula for another language's project, please feel free to submit Pull-request or create issues.
-
-
-
-git clone https://<token>@github.com/owner/repo.git
-cd repo
-magicformula
+See [CONTRIBUTING.md](https://github.com/uetchy/magicformula/blob/master/CONTRIBUTING.md)
