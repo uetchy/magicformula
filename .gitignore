@@ -1,1 +1,10 @@
-/magicformula
+/.bundle/
+/.yardoc
+/vendor/bundle
+/Gemfile.lock
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/tmp/
