@@ -1,4 +1,4 @@
-# solver
+# magicformula
 
 CLI to generate Homebrew formula.
 
