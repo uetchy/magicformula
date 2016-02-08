@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var pkg = require('../package.json');
+
+program
+  .version(pkg.version)
+  .command('create', 'create formula')
+  .command('publish', 'publish formula')
+  .parse(process.argv);

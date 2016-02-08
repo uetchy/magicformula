@@ -1,0 +1,18 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var gitConfig = require('git-config').sync();
+
+program
+  .option('--name', 'Package name')
+  .option('--owner', 'Owner name')
+  .option('--version', 'Version')
+  .option('--token', 'GitHub personal access token')
+  .option('--target-path-64', '')
+  .option('--target-path-32', '')
+  .option('--committer', 'Committer name', gitConfig.user.name)
+  .option('--committer-email', 'Committer email', gitConfig.user.email)
+  .parse(process.argv);
+
+console.log(program.options);
+var pkgs = program.args;

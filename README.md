@@ -7,19 +7,23 @@ CLI to generate Homebrew formula.
 with Homebrew:
 
 ```
-$ brew install uetchy/solver/solver
+$ brew install uetchy/magicformula/magicformula
 ```
 
 or `go get` directly:
 
 ```
-$ go get -d github.com/uetchy/solver
+$ go get -d github.com/uetchy/magicformula
 ```
 
 ## Usage
 
 ```session
-solver push \
+magicformula create
+```
+
+```session
+magicformula create \
   --token "123456789abcdefghijklmnopqrstuvwxyz" \
   --name "awesome-cli-app" \
   --owner "uetchy" \

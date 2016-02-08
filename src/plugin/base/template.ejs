@@ -1,0 +1,21 @@
+require "formula"
+class <%= props.className %> < Formula
+version "<%= props.version %>"
+
+<% if props.targetUrl32 %>
+if Hardware.is_64_bit?
+  url "<%= props.targetUrl64 %>"
+  sha256 "<%= props.targetHash64 %>"
+else
+  url "<%= props.targetUrl32 %>"
+  sha256 "<%= props.targetHash32 %>"
+end
+<% else %>
+url "<%= props.targetUrl64 %>"
+sha256 "<%= props.targetHash64 %>"
+<% end %>
+
+def install
+  bin.install "<%= props.binName %>"
+end
+end
