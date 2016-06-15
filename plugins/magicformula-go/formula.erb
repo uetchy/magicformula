@@ -1,0 +1,46 @@
+require "language/go"
+
+class <%= class_name %> < Formula
+  desc "<%= description %>"
+  homepage "<%= homepage %>"
+  url "<%= url %>"
+  sha256 "<%= sha256 %>"
+
+  head "<%= head %>"
+
+  <% options.each do |option| %>
+  option "<%= option.name %>", "<%= option.description %>"
+  <% end %>
+
+  depends_on "go" => :build
+  <% dependencies.each do |dep| %>
+  depends_on "<%= dep.name %>" => :<%= dep.type %>
+  <% end %>
+
+  <% go_resources.each do |res| %>
+  go_resource "<%= res.url %>" do
+    url "<%= res.git_url %>", :revision => "<%= res.revision %>"
+  end
+  <% end %>
+
+  def install
+    mkdir_p "#{buildpath}/src/github.com/<%= github_owner %>/"
+    ln_s buildpath, "#{buildpath}/src/github.com/<%= github_owner %>/<%= name %>"
+    ENV["GOPATH"] = buildpath
+    ENV.append_path "PATH", "#{ENV["GOPATH"]}/bin"
+    Language::Go.stage_deps resources, buildpath/"src"
+
+    system "go", "build", "-ldflags", "-X main.Version #{version}", "-o", "<%= name %>"
+    bin.install "<%= name %>"
+
+    <% if zsh_completion_path %>
+    if build.with? "completions"
+      zsh_completion.install "<%= zsh_completion_path %>"
+    end
+    <% end %>
+  end
+
+  test do
+    <%= test_command %>
+  end
+end

@@ -1,7 +1,9 @@
 # magicformula
-Generate and upload Homebrew Formula.
+
+Generate and upload Homebrew Formula like magic.
 
 ## Install
+
 `go get` directly:
 
 ```
@@ -9,6 +11,7 @@ $ go get -d github.com/uetchy/magicformula
 ```
 
 ## Usage
+
 with git repository:
 
 ```bash
@@ -28,6 +31,7 @@ magicformula build \
 ```
 
 ## Options
+
 There are all of available options.
 
 option        | description
@@ -40,7 +44,9 @@ option        | description
 --url         | Package url [$PACKAGE_URL]
 
 ## [Wercker](http://wercker.com/) step
+
 See [wercker-step-homebrew](https://github.com/uetchy/wercker-step-homebrew) to get further information.
 
 ## Contributing
+
 See [CONTRIBUTING.md](https://github.com/uetchy/magicformula/blob/master/CONTRIBUTING.md)
